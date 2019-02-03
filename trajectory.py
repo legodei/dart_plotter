@@ -16,10 +16,10 @@ import cv2
 from pydub import AudioSegment
 
 # Input Parameters
-audio_thresh = 22000 # Audio Cutoff Threshold for shot recognition (see plot)
-file_name = 'metal_1' # Video file name in mp4 format
-video_thresh = 50 # Brightness threshold for dart detection (0-255)
-shot_gap = 1.7 # minimum number of seconds between shots
+audio_thresh = 20000 # Audio Cutoff Threshold for shot recognition (see plot)
+file_name = 'rifle_2_acc' # Video file name in mp4 format
+video_thresh = 70 # Brightness threshold for dart detection (0-255)
+shot_gap = 1.2 # minimum number of seconds between shots
 
 # Variable Generation Based on Inputs
 video_file = file_name+'.mp4'
@@ -66,7 +66,7 @@ for tstmp in shot_times_sec: # Loop over shots
 	if escape:
 		break
 	over = False
-	for i in range(120):
+	for i in range(120): # Loop over frames for each shot.
 		if escape or over:
 			break
 		cap.set(1,int(tstmp*video_rate-20+i))
@@ -75,10 +75,14 @@ for tstmp in shot_times_sec: # Loop over shots
 		crop2 = crop.copy()
 		gray = cv2.cvtColor(crop,cv2.COLOR_BGR2GRAY)
 		gray[250:500,:]=0;
+		if np.size(trajcoordlist) >3:
+			gray[200:500,:]=0;
+		elif np.size(trajcoordlist) > 5:
+			gray[150:500,:]=0;
 		thresh = cv2.threshold(gray, video_thresh, 255, cv2.THRESH_BINARY)[1]
 		(_,cnts, _) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
 			cv2.CHAIN_APPROX_NONE)
-		max_area = 1
+		max_area = 4
 		dart = None
 		for c in cnts:
 			if cv2.contourArea(c)>max_area:
@@ -87,9 +91,9 @@ for tstmp in shot_times_sec: # Loop over shots
 				M = cv2.moments(dart)
 				cx = int(M['m10']/M['m00'])
 				cy = int(M['m01']/M['m00'])
-		if max_area == 1 and i>40:
+		if max_area == 4 and i>40:
 			over = True  
-		if max_area != 1:	
+		if max_area != 4:	
 			trajcoordlist = np.append(trajcoordlist, np.array([[cx,cy]]),axis=0)
 
 		for trail in trajectories:
@@ -110,7 +114,8 @@ for tstmp in shot_times_sec: # Loop over shots
 cap.release()
 cv2.destroyAllWindows()
 
-output = np.zeros((0,2),np.int32)
-for path in trajectories:
-		output = np.append(output,path,axis=0)
-np.savetxt(file_name+'.csv', output, delimiter=",")
+if not escape:
+	output = np.zeros((0,2),np.int32)
+	for path in trajectories:
+			output = np.append(output,path,axis=0)
+	np.savetxt(file_name+'.csv', output, delimiter=",")
