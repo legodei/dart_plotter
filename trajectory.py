@@ -17,8 +17,8 @@ from pydub import AudioSegment
 
 # Input Parameters
 audio_thresh = 20000 # Audio Cutoff Threshold for shot recognition (see plot)
-file_name = 'rifle_2_acc' # Video file name in mp4 format
-video_thresh = 70 # Brightness threshold for dart detection (0-255)
+file_name = 'straight_wkr_1' # Video file name in mp4 format
+video_thresh = 40 # Brightness threshold for dart detection (0-255)
 shot_gap = 1.2 # minimum number of seconds between shots
 
 # Variable Generation Based on Inputs
@@ -66,11 +66,13 @@ for tstmp in shot_times_sec: # Loop over shots using the time stamps
 	if escape:
 		break # press q to abort
 	over = False
-	for i in range(120): # Loop over 120 frames for each shot.
+	for i in range(180): # Loop over 180 frames for each shot.
 		if escape or over:
+#				penalty = 20-len(trajcoordlist)
+#				trajcoordlist = np.append(trajcoordlist, np.array([[315+(penalty)*10,140+(penalty)*10]]),axis=0)
 			break
 		# grab the frame that we want, by converting timestamp into video frame
-		cap.set(1,int(tstmp*video_rate-20+i)) # constant is for adjusting timing
+		cap.set(1,int(tstmp*video_rate-30+i)) # constant is for adjusting timing
 		ret, frame = cap.read() 
 		
 		#crop the image that we grabbed to the region of interest
@@ -84,7 +86,7 @@ for tstmp in shot_times_sec: # Loop over shots using the time stamps
 		# coming out of the barrel from interfering
 		if np.size(trajcoordlist) >3:
 			gray[200:500,:]=0;
-		elif np.size(trajcoordlist) > 5: 
+		if np.size(trajcoordlist) > 5: 
 			gray[150:500,:]=0;
 			
 		# thresholds the dart (with pixels) based on brightness
@@ -132,7 +134,7 @@ for tstmp in shot_times_sec: # Loop over shots using the time stamps
 		thresh = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
 		
 		# if we found a bright blob we think is a dart, display a circle around it 
-		if len(max_area != 4):
+		if max_area != 4:
 			cv2.circle(crop,(cx,cy),15,(100,130,0))
 			
 		# combine the thresholded image with the live image side by side

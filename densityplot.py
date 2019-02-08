@@ -20,26 +20,29 @@ def radiusvalue(arr):
 	
 	
 Files = [ # Enter Data files here
-'metal_1_acc',
-'rifle_1_acc',
-'rifle_2_acc',
-'straight_1',
-'straight_2'
+'rifle_acc_1',
+'rifle_acc_2',
+'rifle_wkr_1',
+'straight_acc_1',
+'straight_acc_2',
+'straight_wkr_1'
 ]
 
 el = np.zeros((0,2),np.int32) # empty list
 
-raw_all = {'rifle':[],'metal':[],'straight':[]} # raw input data
-zeroed_all = {'rifle':el,'metal':el,'straight':el}
-radius_all = {'rifle':[],'metal':[],'straight':[]} 
+raw_all = {'rifle_acc':[],'straight_acc':[],'rifle_wkr':[],'straight_wkr':[]} # raw input data
+zeroed_all = {'rifle_acc':el,'straight_acc':el,'rifle_wkr':el,'straight_wkr':el}
+radius_all = {'rifle_acc':[],'straight_acc':[],'rifle_wkr':[],'straight_wkr':[]} 
 
 for filename in Files: # Loop through imports and sort based off of attachment
-	if 'rifle' in filename:
-		raw_all['rifle'].append(np.loadtxt(filename+'.csv', delimiter=","))
-	if 'metal' in filename:
-		raw_all['metal'].append(np.loadtxt(filename+'.csv', delimiter=","))
-	if 'straight' in filename:
-		raw_all['straight'].append(np.loadtxt(filename+'.csv', delimiter=","))
+	if 'rifle_acc' in filename:
+		raw_all['rifle_acc'].append(np.loadtxt(filename+'.csv', delimiter=","))
+	if 'straight_acc' in filename:
+		raw_all['straight_acc'].append(np.loadtxt(filename+'.csv', delimiter=","))
+	if 'rifle_wkr' in filename:
+		raw_all['rifle_wkr'].append(np.loadtxt(filename+'.csv', delimiter=","))
+	if 'straight_wkr' in filename:
+		raw_all['straight_wkr'].append(np.loadtxt(filename+'.csv', delimiter=","))
 
 for muzzle in list(raw_all.keys()): # Loop, normalized coords around centroid
 	for samplelist in raw_all[muzzle]:
@@ -51,17 +54,52 @@ for muzzle in list(zeroed_all.keys()): # Finds distance to centroid
 	radius_list = list(radiusvalue(zeroed_all[muzzle]))
 	radius_all[muzzle].extend(radius_list)
 		
-sns.distplot(radius_all['metal'], color="blue", label="metal muzzle brake")
-sns.distplot(radius_all['straight'], color="red", label="straight flute + muzzle brake")
-ax = sns.distplot(radius_all['rifle'], color="green", label="rifled flutes + muzzle brake")
-plt.legend()
-ax.set_xlim(left=0)
+filler = True
+thickness = 1
+
+
+# KDE Density Curve
+plt.figure()
+sns.kdeplot(radius_all['straight_wkr'], color="navy", shade = filler, linewidth = thickness, label="straight flutes, Worker")
+sns.kdeplot(radius_all['rifle_wkr'], color="dodgerblue", shade = filler, linewidth = thickness,label="rifled flutes, Worker")
+sns.kdeplot(radius_all['straight_acc'], color="darkgreen", shade = filler, linewidth = thickness,label="straight flutes ACCg3")
+ax = sns.kdeplot(radius_all['rifle_acc'], color="limegreen", shade = filler, linewidth = thickness,label="rifled flutes ACCg3")
+leg = plt.legend()
+for legobj in leg.legendHandles:
+    legobj.set_linewidth(4.0)
+ax.set_xlim(left=0, right=100)
 plt.title('Trajectory Distribution Plot')
 plt.xlabel('Distance from center (pixels)')
 plt.ylabel('Density')
 plt.show()
 
 
+# Cumulative Density Curve
+cdfdist = plt.figure()
+sns.kdeplot(radius_all['straight_wkr'], cumulative = True, color="navy", shade = filler, linewidth = thickness, label="straight flutes, Worker")
+sns.kdeplot(radius_all['rifle_wkr'], cumulative = True, color="dodgerblue", shade = filler, linewidth = thickness,label="rifled flutes, Worker")
+sns.kdeplot(radius_all['straight_acc'], cumulative = True, color="darkgreen", shade = filler, linewidth = thickness,label="straight flutes ACCg3")
+ax2 = sns.kdeplot(radius_all['rifle_acc'], cumulative = True, color="limegreen", shade = filler, linewidth = thickness,label="rifled flutes ACCg3")
+leg = plt.legend()
+for legobj in leg.legendHandles:
+    legobj.set_linewidth(4.0)
+ax2.set_xlim(left=0, right=100)
+
+sw = sorted(radius_all['straight_wkr'])
+rw = sorted(radius_all['rifle_wkr'])
+sa = sorted(radius_all['straight_acc'])
+ra = sorted(radius_all['rifle_acc'])
+
+plt.scatter(sw[int(len(sw)*0.75)],0.75,color="navy")
+plt.scatter(rw[int(len(rw)*0.75)],0.75,color="dodgerblue")
+plt.scatter(sa[int(len(sa)*0.75)],0.75,color="darkgreen")
+plt.scatter(ra[int(len(ra)*0.75)],0.75,color="limegreen")
+
+
+
+plt.title('Cumulative Distribution Plot')
+plt.xlabel('Distance from center (pixels)')
+plt.ylabel('Density')
 		
 		
 		
